@@ -9,6 +9,7 @@ The parameters and output probabilities are computed using the Expectation Maxim
 The main functions to use in the project are:
 void initGMM(GaussianMixtureModel *gmm, int iterations,
              double deltaLogLikelihood);
+             
 int ClusterEM(double **points, int data_length, int dim_length,
                enum metric m, double distance_threshold,
                int min_points, GaussianMixtureModel *gmm,
