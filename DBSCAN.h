@@ -1,11 +1,9 @@
 #ifndef DBSCAN_H
 #define DBSCAN_H
 
-#include <math.h>
-
 #include "DataPoints.h"
 
-void getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
+int getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
                             double distance_threshold, int min_points, int **neighbours,
                             int *valid_clusters);
 

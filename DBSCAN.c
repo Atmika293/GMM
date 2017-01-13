@@ -1,15 +1,15 @@
 #include "DBSCAN.h"
 
-void getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
+int getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
                             double distance_threshold, int min_points,
                             int **neighbours, int *valid_clusters)
 {
-    int i  = 0, j = 0, neighbours_count = 0;
+    int i  = 0, j = 0, neighbours_count = 0, retVal = 0;
     int *row;
+    double dist;
 
     neighbours = (int**)malloc(sizeof(int*) * data_length);
     valid_clusters = (int*)malloc(sizeof(int) * data_length);
-
 
     for(i = 0;i < data_length;i++)
     {
@@ -19,7 +19,14 @@ void getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
         {
             if(i != j)
             {
-                if(distance(data[i].features, data[j].features, m) >= distance_threshold)
+                dist = distance(data[i].features, data[j].features, m);
+                if(dist < 0)
+                {
+                    retVal = -1;
+                    break;
+                }
+
+                if(dist <= distance_threshold)
                 {
                     neighbours[i][j] = 1;
                     neighbours_count += 1;
@@ -30,20 +37,29 @@ void getNeighbourhoodMatrix(Point *data, int data_length, enum metric m,
             else
                 neighbours[i][j] = 1;
         }
-        if(neighbours_count >= min_points)
+        if(retVal != -1)
         {
-            neighbours[i] = row;
-            valid_clusters[i] = 1;
+            if(neighbours_count >= min_points)
+            {
+                neighbours[i] = row;
+                valid_clusters[i] = 1;
+            }
+            else
+            {
+                neighbours[i] = NULL;
+                valid_clusters[i] = 0;
+                free(row);
+            }
         }
         else
         {
-            neighbours[i] = NULL;
-            valid_clusters[i] = 0;
             free(row);
+            break;
         }
 
     }
 
+    return retVal;
 }
 
 void expandCluster(int pointIdx, Point *data, int data_length,
@@ -85,23 +101,25 @@ int DBSCAN(Point *data, int data_length, enum metric m,
     int *valid_clusters;
     int clusterID = 0;
 
-    getNeighbourhoodMatrix(data, data_length, m,
+    if(getNeighbourhoodMatrix(data, data_length, m,
                            distance_threshold, min_points,
-                           neighbours, valid_clusters);
-
-    for(i = 0;i < data_length;i++)
+                           neighbours, valid_clusters) != -1)
     {
-        if(data[i].visited)
-            continue;
-
-        data[i].visited = 1;
-        if(valid_clusters[i])
+        for(i = 0;i < data_length;i++)
         {
-            clusterID += 1;
-            expandCluster(i, data, data_length, neighbours, valid_clusters, clusterID);
+            if(data[i].visited)
+                continue;
+
+            data[i].visited = 1;
+            if(valid_clusters[i])
+            {
+                clusterID += 1;
+                expandCluster(i, data, data_length, neighbours, valid_clusters, clusterID);
+            }
+            else
+                data[i].cluster = 0;//NOISE
         }
-        else
-            data[i].cluster = 0;//NOISE
+
     }
 
     return clusterID;

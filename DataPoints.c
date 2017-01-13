@@ -1,5 +1,8 @@
 #include "DataPoints.h"
 
+#include <string.h>
+#include <math.h>
+
 void initialize_point(Point *p, double *features, int length)
 {
     memcpy(p->features.vector, features, length);
@@ -47,18 +50,15 @@ double distance(PointFeatures f1, PointFeatures f2, enum metric m)
         }
     }
 
+    return -1;
 }
 
 int calculateMeanAndVariance(Point *data, int data_length,
                               int clusterCount, double **membership_weights,
                               Point *mean, double *variance)
 {
-    int row = 0;
-    int f = 0;
-    int k = 0;
-    double var = 0;
-    double avg = 0;
-    double mw = 0;
+    int retVal = 0, row = 0, f = 0, k = 0;
+    double var = 0, avg = 0, mw = 0;
     Point p;
     int dim = data[0].features.length;
     int *clusterStrength = (int*)calloc(sizeof(int), clusterCount);
@@ -70,35 +70,45 @@ int calculateMeanAndVariance(Point *data, int data_length,
         clusterStrength[p.cluster - 1] += 1;
 
         if(dim != p.features.length)
-            return -1;
+        {
+            retVal = -1;
+            break;
+        }
 
         for(f = 0;f < dim;f++)
             mean[p.cluster - 1].features.vector[f] += mw * p.features.vector[f];
     }
 
-    for(k = 0;k < clusterCount;k++)
+    if(retVal != -1)
     {
-        for(f = 0;f < dim;f++)
-            mean[k].features.vector[f] = mean[k].features.vector[f]/clusterStrength[k];
-    }
-
-    for(row = 0;row < data_length;row++)
-    {
-        p = data[row];
-        mw = membership_weights[row][p.cluster - 1];
-
-        for(f = 0;f < dim;f++)
+        for(k = 0;k < clusterCount;k++)
         {
-            avg = mean[p.cluster - 1].features.vector[f];
-            var = (p.features.vector[f] - avg) * (p.features.vector[f] - avg);
-
-            variance[p.cluster - 1] += mw * var;
+            for(f = 0;f < dim;f++)
+                mean[k].features.vector[f] = mean[k].features.vector[f]/clusterStrength[k];
         }
-    }
 
-    for(k = 0;k < clusterCount;k++)
-        variance[k] = variance[k]/clusterStrength[k];
+        for(row = 0;row < data_length;row++)
+        {
+            p = data[row];
+            mw = membership_weights[row][p.cluster - 1];
+
+            for(f = 0;f < dim;f++)
+            {
+                if(dim != mean[p.cluster - 1].features.length)
+                    return -1;
+
+                avg = mean[p.cluster - 1].features.vector[f];
+
+                var = (p.features.vector[f] - avg) * (p.features.vector[f] - avg);
+
+                variance[p.cluster - 1] += mw * var;
+            }
+        }
+
+        for(k = 0;k < clusterCount;k++)
+            variance[k] = variance[k]/clusterStrength[k];
+    }
 
     free(clusterStrength);
-    return 0;
+    return retVal;
 }
