@@ -171,7 +171,7 @@ int EMWithDBSCAN(Point *data, int data_length,
                  int min_points, GaussianMixtureModel *gmm,
                  double **membershipWeights)
  {
-     int iter = 0, row = 0, retVal = 0;
+     int iter = 0;
 
      if(clusterData(data, data_length, m, distance_threshold, min_points, gmm) != -1)
      {
@@ -188,17 +188,11 @@ int EMWithDBSCAN(Point *data, int data_length,
                 }
             }
 
-            retVal = -1;
-            break;
+            return -1;
          }
      }
 
-     for(row = 0;row < data_length;row++)
-         free(membershipWeights[row]);
-
-     free(membershipWeights);
-
-     return retVal;
+     return 0;
  }
 
 int EMStepE(Point *data, int data_length, int clusterCount,
@@ -206,8 +200,11 @@ int EMStepE(Point *data, int data_length, int clusterCount,
             double *initial_mixtureWeights, GaussianMixtureModel *gmm,
             double **membershipWeights)
  {
-     int iter = 0, row = 0, k = 0, retVal = 0;
-
+     int iter = 0, k = 0;
+     gmm->clusterCount = clusterCount;
+     gmm->mean = (Point*)calloc(sizeof(Point), clusterCount);
+     gmm->variance = (double*)calloc(sizeof(double), clusterCount);
+     gmm->mixtureWeights = (double*)calloc(sizeof(double), clusterCount);
      for(k = 0;k < clusterCount;k++)
      {
          gmm->mean[k] = initial_mean[k];
@@ -228,16 +225,10 @@ int EMStepE(Point *data, int data_length, int clusterCount,
              }
          }
 
-         retVal = -1;
-         break;
+         return -1;
      }
 
-     for(row = 0;row < data_length;row++)
-         free(membershipWeights[row]);
-
-     free(membershipWeights);
-
-     return retVal;
+     return 0;
  }
 
  int EMStepM(Point *data, int data_length,
