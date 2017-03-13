@@ -44,29 +44,23 @@ void expandCluster(int pointIdx, Point *data, int data_length,
                    int clusterID)
 {
     int neighbourIdx = 0;
-    if(valid_clusters[pointIdx]) // Not a noise point
+
+    data->cluster = clusterID;
+
+    for(neighbourIdx = 0;neighbourIdx < data_length;neighbourIdx++)
     {
-        for(neighbourIdx = 0;neighbourIdx < data_length;neighbourIdx++)
+        if(neighbours[pointIdx][neighbourIdx]) //traversing through neighbouring points
         {
-
-            if(neighbours[pointIdx][neighbourIdx]) //traversing through neighbouring points
+            if(data[neighbourIdx].visited == 0)
             {
-                if(data[neighbourIdx].visited == 0)
-                {
-                    data[neighbourIdx].visited = 1;
-                    expandCluster(neighbourIdx, data, data_length,
-                                  neighbours, valid_clusters, clusterID);
-                }
-
-                if(data[neighbourIdx].cluster <= 0) //if the neighbour has been visited and not assigned
-                    data[neighbourIdx].cluster = clusterID; //or marked a noise point
+                data[neighbourIdx].visited = 1;
+                expandCluster(neighbourIdx, data, data_length,
+                              neighbours, cluster_point, clusterID);
             }
+
+            if(data[neighbourIdx].cluster <= 0) //if the neighbour has been visited and not assigned
+                data[neighbourIdx].cluster = clusterID; //or marked a noise point
         }
-    }
-    else
-    {
-        data[pointIdx].visited = 1;
-        data[pointIdx].cluster = clusterID;
     }
 }
 
